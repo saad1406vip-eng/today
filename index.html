@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#f0ebe0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="مزاري">
+<link rel="manifest" href="manifest.json">
+<title>مزاري</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+:root {
+  /* dark theme (weather/qibla/calc) */
+  --dk-bg:#0a1628; --dk-bg2:#0f1f3a; --dk-card:#1a2d4a; --dk-card2:#1f3558;
+  --dk-border:rgba(100,160,240,0.15);
+  --dk-text:#e8f0ff; --dk-text2:#8aabcc; --dk-text3:#4a7099;
+  /* light theme (calendar) */
+  --lt-bg:#f4efe4; --lt-bg2:#e8e0d0; --lt-card:#ffffff; --lt-card2:#f0ebe0;
+  --lt-border:#d8cdb8; --lt-text:#1a1208; --lt-text2:#5a4e38; --lt-text3:#9a8e78;
+  /* shared */
+  --gold:#d4891a; --gold2:#f5b83a;
+  --blue:#4a9eff; --blue2:#7ab8ff;
+  --green:#2a8a3a; --red:#c0392b;
+  --r:14px;
+}
+html,body { height:100%; overflow:hidden; font-family:'IBM Plex Sans Arabic',sans-serif; }
+.app { display:flex; flex-direction:column; height:100%; background:var(--dk-bg); }
+
+/* ── TAB BAR ── */
+.tab-bar { display:flex; background:#fff; border-top:1px solid #ddd; order:2; flex-shrink:0; padding-bottom:env(safe-area-inset-bottom,6px); }
+.tb { flex:1; display:flex; flex-direction:column; align-items:center; padding:8px 2px 4px; gap:2px; background:none; border:none; cursor:pointer; color:#aaa; font-family:inherit; font-size:12px; font-weight:500; transition:color .2s; }
+.tb.on { color:var(--gold); }
+.tb-icon { font-size:24px; line-height:1; }
+
+/* ── PAGES ── */
+.pages { flex:1; overflow:hidden; order:1; position:relative; }
+.page { position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; display:none; scrollbar-width:none; }
+.page::-webkit-scrollbar { display:none; }
+.page.on { display:block; }
+
+/* ── DARK PAGES (weather, qibla) ── */
+.dk { background:var(--dk-bg); color:var(--dk-text); }
+.dk .hdr { padding:52px 16px 10px; position:sticky; top:0; z-index:5; backdrop-filter:blur(12px); background:linear-gradient(180deg,var(--dk-bg) 70%,transparent 100%); }
+.dk .hdr-title { font-size:24px; font-weight:700; color:var(--dk-text); }
+.dk .hdr-sub { font-size:14px; color:var(--dk-text2); margin-top:2px; }
+.dk .hdr-date { font-size:13px; color:var(--gold2); margin-top:4px; }
+.dk-card { background:var(--dk-card); border:1px solid var(--dk-border); border-radius:var(--r); margin:0 14px 12px; overflow:hidden; }
+.dk-card-hdr { padding:12px 14px 8px; font-size:14px; font-weight:600; color:var(--dk-text2); border-bottom:1px solid var(--dk-border); }
+.dk-card-body { padding:12px 14px; }
+.today-big { margin:0 14px 12px; background:linear-gradient(135deg,var(--dk-card2),var(--dk-card)); border:1px solid var(--dk-border); border-radius:var(--r); padding:18px; display:flex; align-items:center; gap:16px; }
+.today-icon { font-size:56px; flex-shrink:0; }
+.today-temp { font-size:34px; font-weight:700; color:var(--dk-text); line-height:1; }
+.today-feel { font-size:14px; color:var(--dk-text2); margin-top:4px; }
+.today-desc { font-size:15px; color:var(--dk-text); margin-top:6px; line-height:1.5; }
+.today-badge { display:inline-block; margin-top:8px; background:rgba(74,158,255,0.12); border:1px solid rgba(74,158,255,0.28); border-radius:10px; padding:3px 10px; font-size:12px; color:var(--blue2); }
+.week-row { display:flex; align-items:center; padding:11px 0; border-bottom:1px solid var(--dk-border); gap:10px; }
+.week-row:last-child { border-bottom:none; }
+.wr-day { font-size:15px; color:var(--dk-text); width:62px; flex-shrink:0; font-weight:600; }
+.wr-day small { display:block; font-size:12px; color:var(--dk-text3); font-weight:400; }
+.wr-icon { font-size:28px; width:38px; text-align:center; flex-shrink:0; }
+.wr-desc { flex:1; font-size:13px; color:var(--dk-text2); line-height:1.5; }
+.wr-temp { font-size:14px; color:var(--blue2); font-weight:700; flex-shrink:0; }
+.season-row { padding:11px 0; border-bottom:1px solid var(--dk-border); }
+.season-row:last-child { border-bottom:none; }
+.season-head { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+.season-desc { font-size:13px; color:var(--dk-text2); line-height:1.7; padding-right:28px; }
+
+/* ── CALENDAR (LIGHT) ── */
+#p-cal { background:var(--lt-bg); color:var(--lt-text); }
+.cal-topbar { display:flex; align-items:center; padding:52px 14px 0; gap:8px; }
+.cal-mode-toggle { display:flex; background:var(--lt-bg2); border-radius:10px; overflow:hidden; border:1px solid var(--lt-border); flex:1; }
+.cmt { flex:1; padding:10px; text-align:center; font-size:15px; color:var(--lt-text2); cursor:pointer; border:none; background:none; font-family:inherit; font-weight:600; transition:all .2s; }
+.cmt.on { background:var(--gold); color:#fff; }
+.cal-nav { display:flex; align-items:center; justify-content:space-between; padding:10px 14px 6px; }
+.cal-nav-btn { background:var(--lt-card2); border:1px solid var(--lt-border); border-radius:10px; width:42px; height:42px; color:var(--lt-text); font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.cal-nav-btn:active { background:var(--lt-bg2); }
+.cal-nav-mid { text-align:center; flex:1; }
+.mn-main { font-size:24px; font-weight:700; color:var(--lt-text); }
+.mn-sub { font-size:15px; color:var(--gold); margin-top:2px; font-weight:600; }
+.swipe-hint { text-align:center; font-size:12px; color:var(--lt-text3); padding:0 0 6px; }
+.day-names { display:grid; grid-template-columns:repeat(7,1fr); padding:0 10px 6px; }
+.dn { text-align:center; font-size:14px; font-weight:700; color:var(--lt-text3); padding:4px 0; }
+.dn.fri-name { color:var(--green); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); padding:0 10px; gap:4px; }
+.cday { aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:10px; cursor:pointer; gap:2px; transition:background .15s; position:relative; background:var(--lt-card); box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+.cday:active { opacity:.7; }
+.cday.today { background:var(--gold); box-shadow:0 2px 8px rgba(212,137,26,0.4); }
+.cday.today .cd-m,.cday.today .cd-s { color:#fff; }
+.cday.om { background:transparent; box-shadow:none; opacity:.4; }
+.cday.fri .cd-m { color:var(--green); }
+.cday.today.fri .cd-m { color:#fff; }
+.cd-m { font-size:20px; font-weight:700; color:var(--lt-text); line-height:1; }
+.cd-s { font-size:12px; color:var(--lt-text3); line-height:1; font-weight:500; }
+.edot { width:5px; height:5px; border-radius:50%; background:var(--gold); position:absolute; bottom:3px; }
+.cday.today .edot { background:#fff; }
+.cal-footer { padding:10px 14px 4px; display:flex; gap:8px; align-items:center; border-top:1px solid var(--lt-border); margin-top:6px; }
+.today-btn { background:var(--lt-card2); border:1px solid var(--lt-border); border-radius:10px; padding:9px 18px; color:var(--lt-text); font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; }
+.sel-info { flex:1; font-size:13px; color:var(--lt-text2); text-align:center; line-height:1.6; }
+
+/* ── QIBLA ── */
+.qibla-wrap { display:flex; flex-direction:column; align-items:center; padding:20px 14px; }
+.qibla-compass { width:min(260px,76vw); height:min(260px,76vw); position:relative; margin:0 auto; }
+.qc-ring { width:100%; height:100%; border-radius:50%; border:2px solid var(--dk-border); background:radial-gradient(circle at 30% 30%,var(--dk-card2),var(--dk-card)); position:relative; overflow:hidden; box-shadow:0 0 40px rgba(74,158,255,0.08),inset 0 0 40px rgba(0,0,0,0.3); transition:transform .3s linear; }
+.qc-label { position:absolute; font-size:14px; font-weight:700; color:var(--dk-text2); }
+.qc-n { top:8px; left:50%; transform:translateX(-50%); color:var(--red); }
+.qc-s { bottom:8px; left:50%; transform:translateX(-50%); }
+.qc-e { right:10px; top:50%; transform:translateY(-50%); }
+.qc-w { left:10px; top:50%; transform:translateY(-50%); }
+.qc-ctr { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:10px; height:10px; border-radius:50%; background:var(--gold2); z-index:3; }
+.qc-needle { position:absolute; top:50%; left:50%; transform-origin:bottom center; transform:translate(-50%,-100%) rotate(0deg); transition:transform .6s cubic-bezier(.34,1.56,.64,1); z-index:2; width:4px; }
+.needle-up { width:4px; height:min(96px,27vw); background:linear-gradient(180deg,var(--gold2),var(--gold)); border-radius:2px 2px 0 0; }
+.needle-dn { width:4px; height:min(52px,14vw); background:var(--dk-card2); border-radius:0 0 2px 2px; opacity:.5; }
+.qibla-deg { font-size:54px; font-weight:700; color:var(--gold2); margin:16px 0 4px; text-align:center; }
+.qibla-dir { font-size:16px; color:var(--dk-text2); text-align:center; margin-bottom:14px; }
+.qibla-info { background:var(--dk-card); border:1px solid var(--dk-border); border-radius:var(--r); padding:16px; width:100%; font-size:14px; color:var(--dk-text2); text-align:center; line-height:2; }
+.qibla-info .big { font-size:22px; font-weight:700; color:var(--dk-text); display:block; margin-bottom:4px; }
+.qibla-btn { margin-top:14px; width:100%; background:rgba(74,158,255,0.12); border:1px solid rgba(74,158,255,0.3); border-radius:var(--r); padding:16px; color:var(--blue2); font-family:inherit; font-size:16px; font-weight:700; cursor:pointer; }
+.qibla-btn:active { background:rgba(74,158,255,0.22); }
+.qibla-btn:disabled { opacity:.5; }
+.qibla-err { color:var(--red); font-size:13px; text-align:center; padding:8px 0; min-height:24px; }
+
+/* ── TIME DIFF (CALC) ── */
+#p-calc { background:var(--dk-bg); color:var(--dk-text); }
+.calc-wrap { padding:52px 14px 20px; }
+.calc-title { font-size:24px; font-weight:700; color:var(--dk-text); margin-bottom:4px; }
+.calc-sub { font-size:14px; color:var(--dk-text2); margin-bottom:20px; }
+
+.calc-section { background:var(--dk-card); border:1px solid var(--dk-border); border-radius:var(--r); padding:16px; margin-bottom:14px; }
+.calc-section-title { font-size:15px; font-weight:700; color:var(--dk-text2); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.calc-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.calc-row:last-child { margin-bottom:0; }
+.calc-lbl { font-size:14px; color:var(--dk-text2); width:58px; flex-shrink:0; }
+.calc-input { flex:1; background:var(--dk-card2); border:1px solid var(--dk-border); border-radius:10px; padding:10px 12px; color:var(--dk-text); font-family:inherit; font-size:16px; text-align:center; appearance:none; -webkit-appearance:none; }
+.calc-input:focus { outline:none; border-color:var(--gold); }
+.calc-btn { width:100%; background:var(--gold); border:none; border-radius:var(--r); padding:16px; color:#fff; font-family:inherit; font-size:17px; font-weight:700; cursor:pointer; margin-top:4px; }
+.calc-btn:active { background:var(--gold2); }
+
+.result-box { background:var(--dk-card); border:2px solid var(--gold); border-radius:var(--r); padding:20px; text-align:center; display:none; }
+.result-box.show { display:block; }
+.result-main { font-size:42px; font-weight:700; color:var(--gold2); line-height:1; margin-bottom:8px; }
+.result-sub { font-size:16px; color:var(--dk-text2); line-height:1.9; }
+.result-detail { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px; }
+.rd { background:var(--dk-card2); border-radius:10px; padding:10px 4px; text-align:center; }
+.rd-val { font-size:22px; font-weight:700; color:var(--dk-text); }
+.rd-lbl { font-size:12px; color:var(--dk-text3); margin-top:3px; }
+
+/* age result */
+.age-result { background:var(--dk-card); border:2px solid var(--blue); border-radius:var(--r); padding:20px; text-align:center; display:none; }
+.age-result.show { display:block; }
+.age-main { font-size:44px; font-weight:700; color:var(--blue2); margin-bottom:6px; }
+.age-sub { font-size:15px; color:var(--dk-text2); line-height:2; }
+
+/* countdown result */
+.cd-result { background:var(--dk-card); border:2px solid #4ade80; border-radius:var(--r); padding:20px; text-align:center; display:none; }
+.cd-result.show { display:block; }
+.cd-main { font-size:44px; font-weight:700; color:#4ade80; margin-bottom:6px; }
+.cd-neg { color:var(--red) !important; }
+.cd-sub { font-size:15px; color:var(--dk-text2); line-height:2; }
+
+.sp { height:24px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="pages">
+
+    <!-- ══ WEATHER ══ -->
+    <div class="page dk" id="p-weather">
+      <div class="hdr">
+        <div class="hdr-title">⛅ الطقس</div>
+        <div class="hdr-sub">سبت العلايه — جبال السروات</div>
+        <div class="hdr-date" id="wx-date"></div>
+      </div>
+      <div class="today-big">
+        <div class="today-icon" id="wx-icon">⏳</div>
+        <div style="flex:1">
+          <div class="today-temp" id="wx-temp">—</div>
+          <div class="today-feel" id="wx-feel">—</div>
+          <div class="today-desc" id="wx-desc">—</div>
+          <div class="today-badge" id="wx-badge">—</div>
+        </div>
+      </div>
+      <div class="dk-card">
+        <div class="dk-card-hdr">🗓️ الأسبوع القادم</div>
+        <div class="dk-card-body" id="wx-week"></div>
+      </div>
+      <div class="dk-card">
+        <div class="dk-card-hdr">🌀 دخول وخروج الفصول</div>
+        <div class="dk-card-body" id="wx-seasons"></div>
+      </div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- ══ CALENDAR ══ -->
+    <div class="page on" id="p-cal">
+      <div class="cal-topbar">
+        <div class="cal-mode-toggle">
+          <button class="cmt on" id="cmt-g" onclick="setCalMode('greg')">ميلادي</button>
+          <button class="cmt" id="cmt-h" onclick="setCalMode('hijri')">هجري</button>
+        </div>
+      </div>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calPrev()">›</button>
+        <div class="cal-nav-mid">
+          <div class="mn-main" id="cal-main-title">—</div>
+          <div class="mn-sub" id="cal-sub-title">—</div>
+        </div>
+        <button class="cal-nav-btn" onclick="calNext()">‹</button>
+      </div>
+      <div class="swipe-hint">← التالي &nbsp;|&nbsp; السابق →</div>
+      <div class="day-names" id="day-names"></div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-footer">
+        <button class="today-btn" onclick="calToday()">اليوم</button>
+        <div class="sel-info" id="sel-info"></div>
+      </div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- ══ QIBLA ══ -->
+    <div class="page dk" id="p-qibla">
+      <div class="hdr">
+        <div class="hdr-title">🕋 اتجاه القبلة</div>
+        <div class="hdr-sub">مكة المكرمة</div>
+      </div>
+      <div class="qibla-wrap">
+        <div class="qibla-compass">
+          <div class="qc-ring" id="qc-ring">
+            <div class="qc-label qc-n">ش</div>
+            <div class="qc-label qc-s">ج</div>
+            <div class="qc-label qc-e">غ</div>
+            <div class="qc-label qc-w">شغ</div>
+            <div class="qc-ctr"></div>
+            <div class="qc-needle" id="qc-needle">
+              <div class="needle-up"></div><div class="needle-dn"></div>
+            </div>
+          </div>
+        </div>
+        <div class="qibla-deg" id="q-deg">—°</div>
+        <div class="qibla-dir" id="q-dir">اضغط الزر لتحديد اتجاه القبلة</div>
+        <div class="qibla-info" id="q-card"><span class="big">🕋</span>القبلة تجاه مكة المكرمة — أشرف البقاع</div>
+        <button class="qibla-btn" id="q-btn" onclick="startQibla()">📍 تحديد موقعي واتجاه القبلة</button>
+        <div class="qibla-err" id="q-err"></div>
+      </div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- ══ TIME CALC ══ -->
+    <div class="page" id="p-calc">
+      <div class="calc-wrap">
+        <div class="calc-title">⏳ حساب الزمن</div>
+        <div class="calc-sub">الفرق بين تاريخين · العمر · العد التنازلي</div>
+
+        <!-- SECTION 1: DIFF -->
+        <div class="calc-section">
+          <div class="calc-section-title">📅 الفرق بين تاريخين</div>
+          <div class="calc-row">
+            <div class="calc-lbl">من:</div>
+            <input class="calc-input" type="date" id="diff-from">
+          </div>
+          <div class="calc-row">
+            <div class="calc-lbl">إلى:</div>
+            <input class="calc-input" type="date" id="diff-to">
+          </div>
+          <button class="calc-btn" onclick="calcDiff()">احسب الفرق</button>
+        </div>
+        <div class="result-box" id="diff-result">
+          <div class="result-main" id="diff-days">—</div>
+          <div class="result-sub" id="diff-text">—</div>
+          <div class="result-detail" id="diff-detail"></div>
+        </div>
+
+        <!-- SECTION 2: AGE -->
+        <div class="calc-section">
+          <div class="calc-section-title">🎂 حساب العمر</div>
+          <div class="calc-row">
+            <div class="calc-lbl">تاريخ الميلاد:</div>
+            <input class="calc-input" type="date" id="age-dob">
+          </div>
+          <button class="calc-btn" onclick="calcAge()">احسب عمري</button>
+        </div>
+        <div class="age-result" id="age-result">
+          <div class="age-main" id="age-years">—</div>
+          <div class="age-sub" id="age-text">—</div>
+        </div>
+
+        <!-- SECTION 3: COUNTDOWN -->
+        <div class="calc-section">
+          <div class="calc-section-title">⏰ كم باقي على تاريخ؟</div>
+          <div class="calc-row">
+            <div class="calc-lbl">التاريخ:</div>
+            <input class="calc-input" type="date" id="cd-date">
+          </div>
+          <div class="calc-row">
+            <div class="calc-lbl">الاسم:</div>
+            <input class="calc-input" type="text" id="cd-label" placeholder="مثال: إجازتي" style="text-align:right">
+          </div>
+          <button class="calc-btn" onclick="calcCountdown()">احسب</button>
+        </div>
+        <div class="cd-result" id="cd-result">
+          <div class="cd-main" id="cd-days">—</div>
+          <div class="cd-sub" id="cd-text">—</div>
+        </div>
+
+        <div class="sp"></div>
+      </div>
+    </div>
+
+  </div><!-- /pages -->
+
+  <div class="tab-bar">
+    <button class="tb" id="tb-weather" onclick="showTab('weather')"><span class="tb-icon">⛅</span>الطقس</button>
+    <button class="tb on" id="tb-cal" onclick="showTab('cal')"><span class="tb-icon">📅</span>التقويم</button>
+    <button class="tb" id="tb-qibla" onclick="showTab('qibla')"><span class="tb-icon">🕋</span>القبلة</button>
+    <button class="tb" id="tb-calc" onclick="showTab('calc')"><span class="tb-icon">⏳</span>الزمن</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── HIJRI ─────────────────────────────────────────────
+function toHijri(gd) {
+  const jd=Math.floor(gd.getTime()/86400000+2440587.5);
+  const l=jd-1948440+10632, n=Math.floor((l-1)/10631);
+  const ll=l-10631*n+354;
+  const j=Math.floor((10985-ll)/5316)*Math.floor((50*ll)/17719)+Math.floor(ll/5670)*Math.floor((43*ll)/15238);
+  const lll=ll-Math.floor((30-j)/15)*Math.floor((17719*j)/50)-Math.floor(j/16)*Math.floor((15238*j)/43)+29;
+  const hm=Math.floor((24*lll)/709), hd=lll-Math.floor((709*hm)/24), hy=30*n+j-30;
+  return {d:hd, m:hm, y:hy};
+}
+const HM=['محرم','صفر','ربيع الأول','ربيع الثاني','جمادى الأولى','جمادى الثانية','رجب','شعبان','رمضان','شوال','ذو القعدة','ذو الحجة'];
+const GM=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+function hijriStr(gd){const h=toHijri(gd);return `${h.d} ${HM[h.m-1]} ${h.y}هـ`;}
+function hijriMonthStr(gd){const h=toHijri(gd);return `${HM[h.m-1]} ${h.y}هـ`;}
+
+// ── WEATHER ───────────────────────────────────────────
+const MD=[
+  {icon:'❄️', low:3,  hi:16, rain:'خفيفة',  desc:'شتاء بارد، صقيع ليلي فوق 2000م'},
+  {icon:'🌤️', low:5,  hi:18, rain:'خفيفة',  desc:'شتاء يخف، بشائر الربيع'},
+  {icon:'🌦️', low:10, hi:22, rain:'معتدلة', desc:'ربيع معتدل، أمطار خفيفة، إزهار'},
+  {icon:'⛅',  low:13, hi:25, rain:'معتدلة', desc:'ربيع جميل، هواء نقي جبلي'},
+  {icon:'☀️',  low:16, hi:28, rain:'قليلة',  desc:'حرارة تتصاعد، جفاف نسبي'},
+  {icon:'🌥️', low:17, hi:27, rain:'متفرقة', desc:'بداية الرطوبة، غيوم صباحية'},
+  {icon:'⛈️', low:16, hi:26, rain:'غزيرة',  desc:'ذروة الأمطار، عواصف رعدية يومية'},
+  {icon:'🌧️', low:16, hi:26, rain:'غزيرة',  desc:'أمطار مستمرة، تبدأ تخف في النهاية'},
+  {icon:'🌦️', low:14, hi:24, rain:'معتدلة', desc:'خريف لطيف، أمطار تخف'},
+  {icon:'🍂',  low:10, hi:22, rain:'قليلة',  desc:'خريف جميل، ضباب صباحي'},
+  {icon:'🌫️', low:6,  hi:18, rain:'خفيفة',  desc:'برد يتصاعد، ضباب أحياناً'},
+  {icon:'❄️', low:4,  hi:15, rain:'خفيفة',  desc:'شتاء بارد، غيوم'},
+];
+const SEASONS=[
+  {icon:'❄️',color:'#4a9eff',name:'الشتاء',        months:'ديسمبر — فبراير',start:[12,1],end:[2,28], desc:'بارد (3-16°م). صقيع ليلي فوق 2000م. أمطار شتوية خفيفة.'},
+  {icon:'🌿',color:'#4ade80',name:'الربيع',         months:'مارس — مايو',    start:[3,1], end:[5,31], desc:'الأجمل (12-25°م). إزهار الجبال. أمطار خفيفة لطيفة.'},
+  {icon:'⛈️',color:'#e8b84b',name:'الصيف الممطر', months:'يونيو — أغسطس', start:[6,1], end:[8,31], desc:'معتدل (16-28°م). موسم الأمطار الرئيسي من المحيط الهندي.'},
+  {icon:'🍂',color:'#f97316',name:'الخريف',         months:'سبتمبر — نوفمبر',start:[9,1],end:[11,30],desc:'لطيف (10-22°م). موسم الحصاد. ضباب صباحي جميل.'},
+];
+function curSeason(d){const m=d.getMonth()+1;if([12,1,2].includes(m))return SEASONS[0];if([3,4,5].includes(m))return SEASONS[1];if([6,7,8].includes(m))return SEASONS[2];return SEASONS[3];}
+function daysNext(d){const m=d.getMonth()+1,y=d.getFullYear();let n;if([12,1,2].includes(m))n=new Date(m===12?y+1:y,2,1);else if([3,4,5].includes(m))n=new Date(y,5,1);else if([6,7,8].includes(m))n=new Date(y,8,1);else n=new Date(y,11,1);return Math.ceil((n-d)/86400000);}
+function nextLbl(d){const m=d.getMonth()+1;if([12,1,2].includes(m))return'الربيع (مارس)';if([3,4,5].includes(m))return'الأمطار (يونيو)';if([6,7,8].includes(m))return'الخريف (سبتمبر)';return'الشتاء (ديسمبر)';}
+
+function initWeather(){
+  const t=new Date(),md=MD[t.getMonth()],s=curSeason(t);
+  document.getElementById('wx-date').textContent=t.toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' | '+hijriStr(t);
+  document.getElementById('wx-icon').textContent=md.icon;
+  document.getElementById('wx-temp').textContent=md.low+'° — '+md.hi+'°م';
+  document.getElementById('wx-feel').textContent='أمطار: '+md.rain;
+  document.getElementById('wx-desc').textContent=md.desc;
+  document.getElementById('wx-badge').textContent=s.icon+' '+s.name+' · بعد '+daysNext(t)+' يوم: '+nextLbl(t);
+  const DN=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  let wh='';
+  for(let i=0;i<7;i++){
+    const d=new Date(t);d.setDate(d.getDate()+i);
+    const dd=MD[d.getMonth()];
+    const lo=dd.low+(Math.sin(i*1.7+d.getDate())*1.2|0),hi=dd.hi+(Math.cos(i*2.1+d.getDate())*1.2|0);
+    wh+=`<div class="week-row"><div class="wr-day">${i===0?'اليوم':i===1?'غداً':DN[d.getDay()]}<small>${d.getDate()}/${d.getMonth()+1}</small></div><div class="wr-icon">${dd.icon}</div><div class="wr-desc">${dd.desc.split('،')[0]}</div><div class="wr-temp">${lo}°/${hi}°</div></div>`;
+  }
+  document.getElementById('wx-week').innerHTML=wh;
+  let sh='';
+  for(const ss of SEASONS){
+    const ic=curSeason(t).name===ss.name;
+    sh+=`<div class="season-row" style="${ic?'':'opacity:.65'}"><div class="season-head"><span style="font-size:22px">${ss.icon}</span><span style="font-weight:700;color:${ss.color};font-size:16px">${ss.name}</span><span style="font-size:12px;color:var(--dk-text3)">${ss.months}</span>${ic?'<span style="background:rgba(212,137,26,.15);border:1px solid var(--gold);border-radius:8px;padding:1px 8px;font-size:11px;color:var(--gold)">الآن</span>':''}</div><div class="season-desc">${ss.desc}</div></div>`;
+  }
+  document.getElementById('wx-seasons').innerHTML=sh;
+}
+
+// ── CALENDAR ──────────────────────────────────────────
+let calMode='greg',calY,calM;
+function setCalMode(m){calMode=m;document.getElementById('cmt-g').classList.toggle('on',m==='greg');document.getElementById('cmt-h').classList.toggle('on',m==='hijri');renderCal();}
+
+function initCal(){
+  const t=new Date();calY=t.getFullYear();calM=t.getMonth();
+  const GD=['أح','إث','ثل','أر','خم','جم','سب'];
+  document.getElementById('day-names').innerHTML=GD.map((d,i)=>`<div class="dn${i===5?' fri-name':''}">${d}</div>`).join('');
+  renderCal();
+  const pg=document.getElementById('p-cal');
+  let sx=0;
+  pg.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;},{passive:true});
+  pg.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>50){dx<0?calNext():calPrev();}},{passive:true});
+}
+
+function renderCal(){
+  const t=new Date(),fd=new Date(calY,calM,1),dim=new Date(calY,calM+1,0).getDate();
+  const sdow=fd.getDay(),prevDim=new Date(calY,calM,0).getDate();
+  if(calMode==='greg'){
+    document.getElementById('cal-main-title').textContent=GM[calM]+' '+calY;
+    document.getElementById('cal-sub-title').textContent=hijriMonthStr(new Date(calY,calM,15));
+  } else {
+    const h=toHijri(new Date(calY,calM,15));
+    document.getElementById('cal-main-title').textContent=HM[h.m-1]+' '+h.y+'هـ';
+    document.getElementById('cal-sub-title').textContent=GM[calM]+' '+calY;
+  }
+  let html='';
+  for(let i=0;i<sdow;i++){
+    const pd=prevDim-sdow+i+1,dt=new Date(calY,calM-1,pd),h=toHijri(dt);
+    html+=`<div class="cday om"><div class="cd-m">${calMode==='hijri'?h.d:pd}</div><div class="cd-s">${calMode==='hijri'?pd:h.d}</div></div>`;
+  }
+  for(let d=1;d<=dim;d++){
+    const dt=new Date(calY,calM,d),isT=dt.toDateString()===t.toDateString(),isFri=dt.getDay()===5,h=toHijri(dt);
+    const isEv=[1,10,15].includes(h.d)&&[1,9,10,12].includes(h.m);
+    html+=`<div class="cday${isT?' today':''}${isFri&&!isT?' fri':''}" onclick="selDay(${calY},${calM},${d})"><div class="cd-m">${calMode==='hijri'?h.d:d}</div><div class="cd-s">${calMode==='hijri'?d:h.d}</div>${isEv?'<div class="edot"></div>':''}</div>`;
+  }
+  const trail=42-sdow-dim;
+  for(let d=1;d<=trail;d++){
+    const dt=new Date(calY,calM+1,d),h=toHijri(dt);
+    html+=`<div class="cday om"><div class="cd-m">${calMode==='hijri'?h.d:d}</div><div class="cd-s">${calMode==='hijri'?d:h.d}</div></div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+}
+
+function selDay(y,m,d){
+  const dt=new Date(y,m,d),h=toHijri(dt);
+  const DN=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  document.getElementById('sel-info').textContent=DN[dt.getDay()]+' '+d+'/'+(m+1)+'/'+y+'\n'+h.d+' '+HM[h.m-1]+' '+h.y+'هـ';
+}
+function calPrev(){calM--;if(calM<0){calM=11;calY--;}renderCal();}
+function calNext(){calM++;if(calM>11){calM=0;calY++;}renderCal();}
+function calToday(){const t=new Date();calY=t.getFullYear();calM=t.getMonth();document.getElementById('sel-info').textContent='';renderCal();}
+
+// ── QIBLA ─────────────────────────────────────────────
+const MECCA={lat:21.4225,lng:39.8262};
+let qAngle=0;
+function qiblaAngle(lat,lng){const f1=lat*Math.PI/180,f2=MECCA.lat*Math.PI/180,dl=(MECCA.lng-lng)*Math.PI/180,y=Math.sin(dl)*Math.cos(f2),x=Math.cos(f1)*Math.sin(f2)-Math.sin(f1)*Math.cos(f2)*Math.cos(dl);return(Math.atan2(y,x)*180/Math.PI+360)%360;}
+function qiblaDist(lat,lng){const R=6371,f1=lat*Math.PI/180,f2=MECCA.lat*Math.PI/180,df=(MECCA.lat-lat)*Math.PI/180,dl=(MECCA.lng-lng)*Math.PI/180,a=Math.sin(df/2)**2+Math.cos(f1)*Math.cos(f2)*Math.sin(dl/2)**2;return Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));}
+function startQibla(){
+  const btn=document.getElementById('q-btn');
+  document.getElementById('q-err').textContent='';btn.textContent='⏳ جاري...';btn.disabled=true;
+  if(!navigator.geolocation){applyFallback();return;}
+  navigator.geolocation.getCurrentPosition(
+    pos=>{applyQibla(pos.coords.latitude,pos.coords.longitude,false);btn.textContent='🔄 تحديث الموقع';btn.disabled=false;if(window.DeviceOrientationEvent){typeof DeviceOrientationEvent.requestPermission==='function'?DeviceOrientationEvent.requestPermission().then(p=>{if(p==='granted')listenCompass();}):listenCompass();}},
+    ()=>{applyFallback();btn.textContent='🔄 إعادة المحاولة';btn.disabled=false;},
+    {enableHighAccuracy:true,timeout:10000,maximumAge:60000}
+  );
+}
+function applyQibla(lat,lng,fb){
+  qAngle=qiblaAngle(lat,lng);
+  const dist=qiblaDist(lat,lng),dirs=['شمال','شمال شرق','شرق','جنوب شرق','جنوب','جنوب غرب','غرب','شمال غرب'],dir=dirs[Math.round(qAngle/45)%8];
+  document.getElementById('q-deg').textContent=Math.round(qAngle)+'°';
+  document.getElementById('q-dir').textContent='الاتجاه: '+dir+' من موقعك';
+  document.getElementById('q-card').innerHTML=`<span class="big">🕋 ${Math.round(qAngle)}° ${dir}</span>المسافة إلى مكة: <strong style="color:var(--gold2)">${dist.toLocaleString('ar')} كم</strong>${fb?'<div style="font-size:12px;color:var(--red);margin-top:4px">قيمة تقريبية لسبت العلايه</div>':'<div style="font-size:12px;color:var(--dk-text3);margin-top:4px">'+lat.toFixed(4)+'°N '+lng.toFixed(4)+'°E</div>'}`;
+  document.getElementById('qc-needle').style.transform=`translate(-50%,-100%) rotate(${qAngle}deg)`;
+}
+function applyFallback(){document.getElementById('q-err').textContent='⚠️ تعذر الوصول للموقع — قيمة تقريبية';applyQibla(18.5,42.2,true);}
+function listenCompass(){window.addEventListener('deviceorientation',e=>{const h=e.webkitCompassHeading||(e.alpha?(360-e.alpha):null);if(h===null)return;document.getElementById('qc-ring').style.transform=`rotate(${-h}deg)`;document.getElementById('qc-needle').style.transform=`translate(-50%,-100%) rotate(${qAngle}deg)`;},{passive:true});}
+
+// ── TIME CALC ─────────────────────────────────────────
+function ar(n){return n.toLocaleString('ar-SA');}
+
+function calcDiff(){
+  const f=document.getElementById('diff-from').value,t=document.getElementById('diff-to').value;
+  if(!f||!t){alert('اختر التاريخين');return;}
+  const d1=new Date(f),d2=new Date(t),diff=Math.round((d2-d1)/86400000);
+  const abs=Math.abs(diff);
+  const yrs=Math.floor(abs/365),rem=abs%365,mos=Math.floor(rem/30),days=rem%30;
+  const box=document.getElementById('diff-result');
+  document.getElementById('diff-days').textContent=(diff<0?'-':'')+ar(abs)+' يوم';
+  document.getElementById('diff-days').style.color=diff<0?'#f87171':'var(--gold2)';
+  document.getElementById('diff-text').textContent=`${ar(yrs)} سنة، ${ar(mos)} شهر، ${ar(days)} يوم\n${diff<0?'التاريخ الثاني قبل الأول':''}`;
+  document.getElementById('diff-detail').innerHTML=`<div class="rd"><div class="rd-val">${ar(abs)}</div><div class="rd-lbl">يوم</div></div><div class="rd"><div class="rd-val">${ar(Math.round(abs/7))}</div><div class="rd-lbl">أسبوع</div></div><div class="rd"><div class="rd-val">${ar(Math.round(abs/30))}</div><div class="rd-lbl">شهر</div></div>`;
+  box.classList.add('show');
+}
+
+function calcAge(){
+  const dob=document.getElementById('age-dob').value;
+  if(!dob){alert('أدخل تاريخ الميلاد');return;}
+  const birth=new Date(dob),today=new Date();
+  let yrs=today.getFullYear()-birth.getFullYear(),mos=today.getMonth()-birth.getMonth(),days=today.getDate()-birth.getDate();
+  if(days<0){mos--;days+=new Date(today.getFullYear(),today.getMonth(),0).getDate();}
+  if(mos<0){yrs--;mos+=12;}
+  const totalDays=Math.round((today-birth)/86400000);
+  const h=toHijri(birth);
+  document.getElementById('age-years').textContent=ar(yrs)+' سنة';
+  document.getElementById('age-text').innerHTML=`${ar(yrs)} سنة، ${ar(mos)} شهر، ${ar(days)} يوم<br>أي ${ar(totalDays)} يوم إجمالاً<br>تاريخ الميلاد هجري: ${h.d} ${HM[h.m-1]} ${h.y}هـ`;
+  document.getElementById('age-result').classList.add('show');
+}
+
+function calcCountdown(){
+  const ds=document.getElementById('cd-date').value,lbl=document.getElementById('cd-label').value||'الموعد';
+  if(!ds){alert('اختر التاريخ');return;}
+  const target=new Date(ds),today=new Date();today.setHours(0,0,0,0);target.setHours(0,0,0,0);
+  const diff=Math.round((target-today)/86400000);
+  const box=document.getElementById('cd-result'),daysEl=document.getElementById('cd-days');
+  if(diff>0){
+    daysEl.textContent=ar(diff)+' يوم';daysEl.className='cd-main';
+    document.getElementById('cd-text').textContent=`باقي على ${lbl}\n${ds}`;
+  } else if(diff===0){
+    daysEl.textContent='اليوم!';daysEl.className='cd-main';
+    document.getElementById('cd-text').textContent=`${lbl} هو اليوم`;
+  } else {
+    daysEl.textContent=ar(Math.abs(diff))+' يوم';daysEl.className='cd-main cd-neg';
+    document.getElementById('cd-text').textContent=`${lbl} مضى منذ ${ar(Math.abs(diff))} يوم`;
+  }
+  box.classList.add('show');
+}
+
+// ── TABS ──────────────────────────────────────────────
+function showTab(n){
+  ['weather','cal','qibla','calc'].forEach(t=>{
+    document.getElementById('p-'+t).classList.toggle('on',t===n);
+    document.getElementById('tb-'+t).classList.toggle('on',t===n);
+  });
+}
+
+// ── BOOT ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  initWeather();initCal();
+  // set today as default for calc inputs
+  const td=new Date().toISOString().split('T')[0];
+  document.getElementById('diff-from').value=td;
+  document.getElementById('diff-to').value=td;
+  document.getElementById('age-dob').value='';
+  document.getElementById('cd-date').value=td;
+});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+</script>
+</body>
+</html>
