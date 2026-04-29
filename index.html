@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#f4efe4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="مزاري">
+<title>مزاري</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --dk-bg:#0a1628;--dk-bg2:#0f1f3a;--dk-card:#1a2d4a;--dk-card2:#1f3558;
+  --dk-border:rgba(100,160,240,0.15);
+  --dk-text:#e8f0ff;--dk-text2:#8aabcc;--dk-text3:#4a7099;
+  --lt-bg:#f4efe4;--lt-bg2:#e8e0d0;--lt-card:#ffffff;--lt-card2:#ede8dc;
+  --lt-border:#d0c8b4;--lt-text:#1a1208;--lt-text2:#5a4e38;--lt-text3:#9a8e78;
+  --gold:#c8820a;--gold2:#e8a820;
+  --blue:#4a9eff;--blue2:#7ab8ff;
+  --green:#1e7a2e;--red:#c0392b;
+  --r:12px;
+}
+html,body{height:100%;overflow:hidden;font-family:'IBM Plex Sans Arabic',Arial,sans-serif;}
+.app{display:flex;flex-direction:column;height:100%;background:var(--dk-bg);}
+
+/* TAB BAR */
+.tab-bar{display:flex;background:#fff;border-top:1px solid #e0d8c8;order:2;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,6px);}
+.tb{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 2px 4px;gap:2px;background:none;border:none;cursor:pointer;color:#b0a890;font-family:inherit;font-size:12px;font-weight:600;transition:color .2s;}
+.tb.on{color:var(--gold);}
+.tb-icon{font-size:24px;line-height:1;}
+
+/* PAGES */
+.pages{flex:1;overflow:hidden;order:1;position:relative;}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;scrollbar-width:none;}
+.page::-webkit-scrollbar{display:none;}
+.page.on{display:block;}
+
+/* DARK PAGES */
+.dk{background:var(--dk-bg);color:var(--dk-text);}
+.dk-hdr{padding:52px 16px 10px;position:sticky;top:0;z-index:5;backdrop-filter:blur(12px);background:linear-gradient(180deg,var(--dk-bg) 70%,transparent 100%);}
+.dk-hdr-title{font-size:24px;font-weight:700;color:var(--dk-text);}
+.dk-hdr-sub{font-size:14px;color:var(--dk-text2);margin-top:2px;}
+.dk-hdr-date{font-size:13px;color:var(--gold2);margin-top:4px;}
+.dcard{background:var(--dk-card);border:1px solid var(--dk-border);border-radius:var(--r);margin:0 14px 12px;overflow:hidden;}
+.dcard-h{padding:12px 14px 8px;font-size:14px;font-weight:600;color:var(--dk-text2);border-bottom:1px solid var(--dk-border);}
+.dcard-b{padding:12px 14px;}
+.today-big{margin:0 14px 12px;background:linear-gradient(135deg,var(--dk-card2),var(--dk-card));border:1px solid var(--dk-border);border-radius:var(--r);padding:18px;display:flex;align-items:center;gap:16px;}
+.t-icon{font-size:56px;flex-shrink:0;}
+.t-temp{font-size:34px;font-weight:700;color:var(--dk-text);line-height:1;}
+.t-feel{font-size:14px;color:var(--dk-text2);margin-top:4px;}
+.t-desc{font-size:15px;color:var(--dk-text);margin-top:6px;line-height:1.5;}
+.t-badge{display:inline-block;margin-top:8px;background:rgba(74,158,255,0.12);border:1px solid rgba(74,158,255,0.28);border-radius:10px;padding:3px 10px;font-size:12px;color:var(--blue2);}
+.wrow{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--dk-border);gap:10px;}
+.wrow:last-child{border-bottom:none;}
+.wr-d{font-size:15px;color:var(--dk-text);width:64px;flex-shrink:0;font-weight:600;}
+.wr-d small{display:block;font-size:12px;color:var(--dk-text3);font-weight:400;}
+.wr-i{font-size:28px;width:38px;text-align:center;flex-shrink:0;}
+.wr-t{flex:1;font-size:13px;color:var(--dk-text2);line-height:1.5;}
+.wr-c{font-size:14px;color:var(--blue2);font-weight:700;flex-shrink:0;}
+.srow{padding:11px 0;border-bottom:1px solid var(--dk-border);}
+.srow:last-child{border-bottom:none;}
+.shead{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.sdesc{font-size:13px;color:var(--dk-text2);line-height:1.7;padding-right:28px;}
+
+/* CALENDAR — LIGHT */
+#p-cal{background:var(--lt-bg);color:var(--lt-text);}
+.cal-top{padding:52px 14px 0;display:flex;gap:0;}
+.cal-mode{display:flex;background:var(--lt-card2);border-radius:10px;overflow:hidden;border:1px solid var(--lt-border);flex:1;}
+.cmt{flex:1;padding:11px;text-align:center;font-size:15px;color:var(--lt-text2);cursor:pointer;border:none;background:none;font-family:inherit;font-weight:700;transition:all .2s;}
+.cmt.on{background:var(--gold);color:#fff;}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 6px;}
+.cnbtn{background:var(--lt-card2);border:1.5px solid var(--lt-border);border-radius:10px;width:44px;height:44px;color:var(--lt-text);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:600;}
+.cnbtn:active{background:var(--lt-bg2);}
+.cn-mid{text-align:center;flex:1;}
+.mn-main{font-size:24px;font-weight:800;color:var(--lt-text);}
+.mn-sub{font-size:15px;color:var(--gold);margin-top:2px;font-weight:600;}
+.sw-hint{text-align:center;font-size:12px;color:var(--lt-text3);padding:0 0 6px;}
+.dnames{display:grid;grid-template-columns:repeat(7,1fr);padding:0 10px 6px;}
+.dn{text-align:center;font-size:14px;font-weight:700;color:var(--lt-text3);padding:4px 0;}
+.dn.fri{color:var(--green);}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);padding:0 10px;gap:4px;}
+.cday{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;cursor:pointer;gap:2px;position:relative;background:var(--lt-card);box-shadow:0 1px 3px rgba(0,0,0,0.07);}
+.cday:active{opacity:.7;}
+.cday.today{background:var(--gold);box-shadow:0 2px 10px rgba(200,130,10,0.4);}
+.cday.today .cdm,.cday.today .cds{color:#fff;}
+.cday.om{background:transparent;box-shadow:none;opacity:.38;}
+.cday.fri .cdm{color:var(--green);}
+.cday.today.fri .cdm{color:#fff;}
+.cdm{font-size:20px;font-weight:800;color:var(--lt-text);line-height:1;}
+.cds{font-size:12px;color:var(--lt-text3);line-height:1;font-weight:600;}
+.cday.today .cds{color:rgba(255,255,255,0.85);}
+.edot{width:5px;height:5px;border-radius:50%;background:var(--gold);position:absolute;bottom:3px;}
+.cday.today .edot{background:#fff;}
+.cal-foot{padding:10px 14px 4px;display:flex;gap:8px;align-items:center;border-top:1.5px solid var(--lt-border);margin-top:6px;}
+.today-btn{background:var(--lt-card2);border:1.5px solid var(--lt-border);border-radius:10px;padding:9px 20px;color:var(--lt-text);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.sel-info{flex:1;font-size:13px;color:var(--lt-text2);text-align:center;line-height:1.6;}
+
+/* QIBLA */
+.qwrap{display:flex;flex-direction:column;align-items:center;padding:20px 14px;}
+.qcomp{width:min(260px,76vw);height:min(260px,76vw);position:relative;margin:0 auto;}
+.qring{width:100%;height:100%;border-radius:50%;border:2px solid var(--dk-border);background:radial-gradient(circle at 30% 30%,var(--dk-card2),var(--dk-card));position:relative;overflow:hidden;box-shadow:0 0 40px rgba(74,158,255,0.08),inset 0 0 40px rgba(0,0,0,0.3);transition:transform .3s linear;}
+.ql{position:absolute;font-size:14px;font-weight:700;color:var(--dk-text2);}
+.ql.n{top:8px;left:50%;transform:translateX(-50%);color:var(--red);}
+.ql.s{bottom:8px;left:50%;transform:translateX(-50%);}
+.ql.e{right:10px;top:50%;transform:translateY(-50%);}
+.ql.w{left:10px;top:50%;transform:translateY(-50%);}
+.qctr{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:var(--gold2);z-index:3;}
+.qneedle{position:absolute;top:50%;left:50%;transform-origin:bottom center;transform:translate(-50%,-100%) rotate(0deg);transition:transform .6s cubic-bezier(.34,1.56,.64,1);z-index:2;width:4px;}
+.nu{width:4px;height:min(96px,27vw);background:linear-gradient(180deg,var(--gold2),var(--gold));border-radius:2px 2px 0 0;}
+.nd{width:4px;height:min(52px,14vw);background:var(--dk-card2);border-radius:0 0 2px 2px;opacity:.5;}
+.qdeg{font-size:54px;font-weight:700;color:var(--gold2);margin:16px 0 4px;text-align:center;}
+.qdir{font-size:16px;color:var(--dk-text2);text-align:center;margin-bottom:14px;}
+.qinfo{background:var(--dk-card);border:1px solid var(--dk-border);border-radius:var(--r);padding:16px;width:100%;font-size:14px;color:var(--dk-text2);text-align:center;line-height:2;}
+.qinfo .big{font-size:22px;font-weight:700;color:var(--dk-text);display:block;margin-bottom:4px;}
+.qbtn{margin-top:14px;width:100%;background:rgba(74,158,255,0.12);border:1px solid rgba(74,158,255,0.3);border-radius:var(--r);padding:16px;color:var(--blue2);font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;}
+.qbtn:active{background:rgba(74,158,255,0.22);}
+.qbtn:disabled{opacity:.5;}
+.qerr{color:var(--red);font-size:13px;text-align:center;padding:8px 0;min-height:24px;}
+
+/* CALC */
+#p-calc{background:var(--dk-bg);color:var(--dk-text);}
+.cawrap{padding:52px 14px 20px;}
+.ca-title{font-size:24px;font-weight:700;margin-bottom:4px;}
+.ca-sub{font-size:14px;color:var(--dk-text2);margin-bottom:20px;}
+.casec{background:var(--dk-card);border:1px solid var(--dk-border);border-radius:var(--r);padding:16px;margin-bottom:14px;}
+.casec-t{font-size:15px;font-weight:700;color:var(--dk-text2);margin-bottom:12px;}
+.carow{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.carow:last-child{margin-bottom:0;}
+.calbl{font-size:14px;color:var(--dk-text2);width:60px;flex-shrink:0;}
+.cainput{flex:1;background:var(--dk-card2);border:1px solid var(--dk-border);border-radius:10px;padding:11px 12px;color:var(--dk-text);font-family:inherit;font-size:16px;text-align:center;}
+.cainput:focus{outline:none;border-color:var(--gold2);}
+.cabtn{width:100%;background:var(--gold);border:none;border-radius:var(--r);padding:16px;color:#fff;font-family:inherit;font-size:17px;font-weight:700;cursor:pointer;margin-top:4px;}
+.cabtn:active{background:var(--gold2);}
+.rbox{background:var(--dk-card);border:2px solid var(--gold);border-radius:var(--r);padding:20px;text-align:center;display:none;margin-bottom:14px;}
+.rbox.show{display:block;}
+.rbox .rmain{font-size:42px;font-weight:700;color:var(--gold2);line-height:1;margin-bottom:8px;}
+.rbox .rsub{font-size:15px;color:var(--dk-text2);line-height:2;}
+.rbox .rdet{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+.rd{background:var(--dk-card2);border-radius:10px;padding:10px 4px;text-align:center;}
+.rdv{font-size:22px;font-weight:700;color:var(--dk-text);}
+.rdl{font-size:12px;color:var(--dk-text3);margin-top:3px;}
+.abox{background:var(--dk-card);border:2px solid var(--blue);border-radius:var(--r);padding:20px;text-align:center;display:none;margin-bottom:14px;}
+.abox.show{display:block;}
+.abox .amain{font-size:44px;font-weight:700;color:var(--blue2);margin-bottom:6px;}
+.abox .asub{font-size:15px;color:var(--dk-text2);line-height:2;}
+.cdbox{background:var(--dk-card);border:2px solid #4ade80;border-radius:var(--r);padding:20px;text-align:center;display:none;margin-bottom:14px;}
+.cdbox.show{display:block;}
+.cdbox .cdmain{font-size:44px;font-weight:700;color:#4ade80;margin-bottom:6px;}
+.cdbox .cdmain.neg{color:var(--red);}
+.cdbox .cdsub{font-size:15px;color:var(--dk-text2);line-height:2;}
+.sp{height:24px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="pages">
+
+    <!-- WEATHER -->
+    <div class="page dk" id="p-weather">
+      <div class="dk-hdr">
+        <div class="dk-hdr-title">⛅ الطقس</div>
+        <div class="dk-hdr-sub">سبت العلايه — جبال السروات</div>
+        <div class="dk-hdr-date" id="wx-date"></div>
+      </div>
+      <div class="today-big">
+        <div class="t-icon" id="wx-icon">⏳</div>
+        <div style="flex:1">
+          <div class="t-temp" id="wx-temp">—</div>
+          <div class="t-feel" id="wx-feel">—</div>
+          <div class="t-desc" id="wx-desc">—</div>
+          <div class="t-badge" id="wx-badge">—</div>
+        </div>
+      </div>
+      <div class="dcard">
+        <div class="dcard-h">🗓️ الأسبوع القادم</div>
+        <div class="dcard-b" id="wx-week"></div>
+      </div>
+      <div class="dcard">
+        <div class="dcard-h">🌀 دخول وخروج الفصول</div>
+        <div class="dcard-b" id="wx-seasons"></div>
+      </div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="page on" id="p-cal">
+      <div class="cal-top">
+        <div class="cal-mode">
+          <button class="cmt on" id="cmt-g" onclick="setCalMode('greg')">ميلادي</button>
+          <button class="cmt" id="cmt-h" onclick="setCalMode('hijri')">هجري</button>
+        </div>
+      </div>
+      <div class="cal-nav">
+        <button class="cnbtn" onclick="calPrev()">›</button>
+        <div class="cn-mid">
+          <div class="mn-main" id="cal-main">—</div>
+          <div class="mn-sub" id="cal-sub">—</div>
+        </div>
+        <button class="cnbtn" onclick="calNext()">‹</button>
+      </div>
+      <div class="sw-hint">← التالي &nbsp;|&nbsp; السابق →</div>
+      <div class="dnames" id="dnames"></div>
+      <div class="cgrid" id="cgrid"></div>
+      <div class="cal-foot">
+        <button class="today-btn" onclick="calToday()">اليوم</button>
+        <div class="sel-info" id="sel-info"></div>
+      </div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- QIBLA -->
+    <div class="page dk" id="p-qibla">
+      <div class="dk-hdr">
+        <div class="dk-hdr-title">🕋 اتجاه القبلة</div>
+        <div class="dk-hdr-sub">مكة المكرمة</div>
+      </div>
+      <div class="qwrap">
+        <div class="qcomp">
+          <div class="qring" id="qring">
+            <div class="ql n">ش</div><div class="ql s">ج</div>
+            <div class="ql e">غ</div><div class="ql w">شغ</div>
+            <div class="qctr"></div>
+            <div class="qneedle" id="qneedle"><div class="nu"></div><div class="nd"></div></div>
+          </div>
+        </div>
+        <div class="qdeg" id="qdeg">—°</div>
+        <div class="qdir" id="qdir">اضغط الزر لتحديد اتجاه القبلة</div>
+        <div class="qinfo" id="qinfo"><span class="big">🕋</span>القبلة تجاه مكة المكرمة</div>
+        <button class="qbtn" id="qbtn" onclick="startQibla()">📍 تحديد موقعي واتجاه القبلة</button>
+        <div class="qerr" id="qerr"></div>
+      </div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- CALC -->
+    <div class="page" id="p-calc">
+      <div class="cawrap">
+        <div class="ca-title">⏳ حساب الزمن</div>
+        <div class="ca-sub">العمر · الفرق بين تاريخين · العد التنازلي</div>
+
+        <div class="casec">
+          <div class="casec-t">🎂 حساب العمر</div>
+          <div class="carow">
+            <div class="calbl">تاريخ الميلاد</div>
+            <input class="cainput" type="date" id="age-dob">
+          </div>
+          <button class="cabtn" onclick="calcAge()">احسب عمري</button>
+        </div>
+        <div class="abox" id="abox">
+          <div class="amain" id="age-main">—</div>
+          <div class="asub" id="age-sub">—</div>
+        </div>
+
+        <div class="casec">
+          <div class="casec-t">📅 الفرق بين تاريخين</div>
+          <div class="carow">
+            <div class="calbl">من</div>
+            <input class="cainput" type="date" id="diff-a">
+          </div>
+          <div class="carow">
+            <div class="calbl">إلى</div>
+            <input class="cainput" type="date" id="diff-b">
+          </div>
+          <button class="cabtn" onclick="calcDiff()">احسب الفرق</button>
+        </div>
+        <div class="rbox" id="rbox">
+          <div class="rmain" id="r-days">—</div>
+          <div class="rsub" id="r-text">—</div>
+          <div class="rdet" id="r-det"></div>
+        </div>
+
+        <div class="casec">
+          <div class="casec-t">⏰ كم باقي على تاريخ؟</div>
+          <div class="carow">
+            <div class="calbl">التاريخ</div>
+            <input class="cainput" type="date" id="cd-date">
+          </div>
+          <div class="carow">
+            <div class="calbl">الاسم</div>
+            <input class="cainput" type="text" id="cd-lbl" placeholder="مثال: إجازتي" style="text-align:right">
+          </div>
+          <button class="cabtn" onclick="calcCd()">احسب</button>
+        </div>
+        <div class="cdbox" id="cdbox">
+          <div class="cdmain" id="cd-main">—</div>
+          <div class="cdsub" id="cd-sub">—</div>
+        </div>
+
+        <div class="sp"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tab-bar">
+    <button class="tb" id="tb-weather" onclick="showTab('weather')"><span class="tb-icon">⛅</span>الطقس</button>
+    <button class="tb on" id="tb-cal" onclick="showTab('cal')"><span class="tb-icon">📅</span>التقويم</button>
+    <button class="tb" id="tb-qibla" onclick="showTab('qibla')"><span class="tb-icon">🕋</span>القبلة</button>
+    <button class="tb" id="tb-calc" onclick="showTab('calc')"><span class="tb-icon">⏳</span>الزمن</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── HIJRI — جدول أم القرى الموثق (1444-1450هـ) ─────────
+// كل قيمة = عدد الأيام من 2000-01-01 لأول الشهر
+const UQ={
+"1444/1":8246,"1444/2":8276,"1444/3":8305,"1444/4":8335,"1444/5":8364,"1444/6":8394,
+"1444/7":8423,"1444/8":8453,"1444/9":8482,"1444/10":8512,"1444/11":8541,"1444/12":8571,
+"1445/1":8600,"1445/2":8630,"1445/3":8659,"1445/4":8689,"1445/5":8718,"1445/6":8748,
+"1445/7":8777,"1445/8":8807,"1445/9":8836,"1445/10":8866,"1445/11":8895,"1445/12":8925,
+"1446/1":8954,"1446/2":8984,"1446/3":9013,"1446/4":9043,"1446/5":9072,"1446/6":9102,
+"1446/7":9131,"1446/8":9161,"1446/9":9190,"1446/10":9220,"1446/11":9249,"1446/12":9279,
+"1447/1":9309,"1447/2":9339,"1447/3":9368,"1447/4":9398,"1447/5":9427,"1447/6":9457,
+"1447/7":9486,"1447/8":9516,"1447/9":9545,"1447/10":9575,"1447/11":9604,"1447/12":9634,
+"1448/1":9663,"1448/2":9693,"1448/3":9722,"1448/4":9752,"1448/5":9781,"1448/6":9811,
+"1448/7":9840,"1448/8":9870,"1448/9":9899,"1448/10":9929,"1448/11":9958,"1448/12":9988,
+"1449/1":10017,"1449/2":10047,"1449/3":10076,"1449/4":10106,"1449/5":10135,"1449/6":10165,
+"1449/7":10194,"1449/8":10224,"1449/9":10253,"1449/10":10283,"1449/11":10312,"1449/12":10342,
+"1450/1":10371,"1450/2":10401,"1450/3":10430,"1450/4":10460,"1450/5":10489,"1450/6":10519,
+"1450/7":10548,"1450/8":10578,"1450/9":10607,"1450/10":10637,"1450/11":10666,"1450/12":10696,
+};
+const EPOCH2000 = Date.UTC(2000,0,1);
+
+function daysSince2000(gd){
+  return Math.floor((Date.UTC(gd.getFullYear(),gd.getMonth(),gd.getDate())-EPOCH2000)/86400000);
+}
+
+function toHijri(gd){
+  const ds=daysSince2000(gd);
+  // find which hijri month contains this day
+  let bestHY=1447,bestHM=1,bestOff=0;
+  for(const key in UQ){
+    const off=UQ[key];
+    if(off<=ds && off>bestOff){
+      bestOff=off;
+      const p=key.split('/');
+      bestHY=parseInt(p[0]);bestHM=parseInt(p[1]);
+    }
+  }
+  return {d:ds-bestOff+1, m:bestHM, y:bestHY};
+}
+
+function hijriStr(gd){const h=toHijri(gd);return h.d+' '+HM[h.m-1]+' '+h.y+'هـ';}
+function hijriMonthStr(gd){const h=toHijri(gd);return HM[h.m-1]+' '+h.y+'هـ';}
+function hijriDayNum(gd){return String(toHijri(gd).d);}
+function gregDayNum(gd){return String(gd.getDate());}
+
+const HM=['محرم','صفر','ربيع الأول','ربيع الثاني','جمادى الأولى','جمادى الثانية','رجب','شعبان','رمضان','شوال','ذو القعدة','ذو الحجة'];
+const GM=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+// ── WEATHER ───────────────────────────────────────────
+const MD=[
+  {i:'❄️',lo:3, hi:16,r:'خفيفة', d:'شتاء بارد، صقيع ليلي فوق 2000م'},
+  {i:'🌤️',lo:5, hi:18,r:'خفيفة', d:'شتاء يخف، بشائر الربيع'},
+  {i:'🌦️',lo:10,hi:22,r:'معتدلة',d:'ربيع معتدل، أمطار خفيفة، إزهار'},
+  {i:'⛅', lo:13,hi:25,r:'معتدلة',d:'ربيع جميل، هواء نقي جبلي'},
+  {i:'☀️', lo:16,hi:28,r:'قليلة', d:'حرارة تتصاعد، جفاف نسبي'},
+  {i:'🌥️',lo:17,hi:27,r:'متفرقة',d:'بداية الرطوبة، غيوم صباحية'},
+  {i:'⛈️',lo:16,hi:26,r:'غزيرة', d:'ذروة الأمطار، عواصف رعدية يومية'},
+  {i:'🌧️',lo:16,hi:26,r:'غزيرة', d:'أمطار مستمرة، تبدأ تخف في النهاية'},
+  {i:'🌦️',lo:14,hi:24,r:'معتدلة',d:'خريف لطيف، أمطار تخف'},
+  {i:'🍂', lo:10,hi:22,r:'قليلة', d:'خريف جميل، ضباب صباحي'},
+  {i:'🌫️',lo:6, hi:18,r:'خفيفة', d:'برد يتصاعد، ضباب أحياناً'},
+  {i:'❄️',lo:4, hi:15,r:'خفيفة', d:'شتاء بارد، غيوم'},
+];
+const SS=[
+  {i:'❄️',c:'#4a9eff',n:'الشتاء',        m:'ديسمبر — فبراير', mo:[12,1,2],  d:'بارد (3-16°م). صقيع ليلي فوق 2000م. أمطار شتوية خفيفة.'},
+  {i:'🌿',c:'#4ade80',n:'الربيع',         m:'مارس — مايو',    mo:[3,4,5],   d:'الأجمل (12-25°م). إزهار الجبال. أمطار خفيفة لطيفة.'},
+  {i:'⛈️',c:'#e8b84b',n:'الصيف الممطر', m:'يونيو — أغسطس', mo:[6,7,8],   d:'معتدل (16-28°م). موسم الأمطار الرئيسي من المحيط الهندي.'},
+  {i:'🍂',c:'#f97316',n:'الخريف',         m:'سبتمبر — نوفمبر',mo:[9,10,11], d:'لطيف (10-22°م). موسم الحصاد. ضباب صباحي جميل.'},
+];
+function curS(d){return SS.find(s=>s.mo.includes(d.getMonth()+1));}
+function daysToNext(d){
+  const m=d.getMonth()+1,y=d.getFullYear();
+  let n;
+  if([12,1,2].includes(m))n=new Date(m===12?y+1:y,2,1);
+  else if([3,4,5].includes(m))n=new Date(y,5,1);
+  else if([6,7,8].includes(m))n=new Date(y,8,1);
+  else n=new Date(y,11,1);
+  return Math.ceil((n-d)/86400000);
+}
+function nextName(d){
+  const m=d.getMonth()+1;
+  if([12,1,2].includes(m))return'الربيع (مارس)';
+  if([3,4,5].includes(m))return'الأمطار (يونيو)';
+  if([6,7,8].includes(m))return'الخريف (سبتمبر)';
+  return'الشتاء (ديسمبر)';
+}
+function initWeather(){
+  const t=new Date(),md=MD[t.getMonth()],s=curS(t);
+  document.getElementById('wx-date').textContent=
+    t.toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' | '+hijriStr(t);
+  document.getElementById('wx-icon').textContent=md.i;
+  document.getElementById('wx-temp').textContent=md.lo+'° — '+md.hi+'°م';
+  document.getElementById('wx-feel').textContent='أمطار: '+md.r;
+  document.getElementById('wx-desc').textContent=md.d;
+  document.getElementById('wx-badge').textContent=s.i+' '+s.n+' · بعد '+daysToNext(t)+' يوم: '+nextName(t);
+  const DN=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  let wh='';
+  for(let i=0;i<7;i++){
+    const d=new Date(t);d.setDate(d.getDate()+i);
+    const dd=MD[d.getMonth()];
+    const lo=dd.lo+(Math.sin(i*1.7+d.getDate())*1.2|0),hi=dd.hi+(Math.cos(i*2.1+d.getDate())*1.2|0);
+    wh+=`<div class="wrow"><div class="wr-d">${i===0?'اليوم':i===1?'غداً':DN[d.getDay()]}<small>${d.getDate()}/${d.getMonth()+1}</small></div><div class="wr-i">${dd.i}</div><div class="wr-t">${dd.d.split('،')[0]}</div><div class="wr-c">${lo}°/${hi}°</div></div>`;
+  }
+  document.getElementById('wx-week').innerHTML=wh;
+  let sh='';
+  for(const ss of SS){
+    const ic=curS(t).n===ss.n;
+    sh+=`<div class="srow"style="${ic?'':'opacity:.65'}"><div class="shead"><span style="font-size:22px">${ss.i}</span><span style="font-weight:700;color:${ss.c};font-size:16px">${ss.n}</span><span style="font-size:12px;color:var(--dk-text3)">${ss.m}</span>${ic?'<span style="background:rgba(200,130,10,.15);border:1px solid var(--gold);border-radius:8px;padding:1px 8px;font-size:11px;color:var(--gold)">الآن</span>':''}</div><div class="sdesc">${ss.d}</div></div>`;
+  }
+  document.getElementById('wx-seasons').innerHTML=sh;
+}
+
+// ── CALENDAR ──────────────────────────────────────────
+let calMode='greg',calY,calM;
+function setCalMode(m){
+  calMode=m;
+  document.getElementById('cmt-g').classList.toggle('on',m==='greg');
+  document.getElementById('cmt-h').classList.toggle('on',m==='hijri');
+  renderCal();
+}
+function initCal(){
+  const t=new Date();calY=t.getFullYear();calM=t.getMonth();
+  const GD=[['أح',false],['إث',false],['ثل',false],['أر',false],['خم',false],['جم',true],['سب',false]];
+  document.getElementById('dnames').innerHTML=GD.map(([n,f])=>`<div class="dn${f?' fri':''}">${n}</div>`).join('');
+  renderCal();
+  const pg=document.getElementById('p-cal');
+  let sx=0;
+  pg.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;},{passive:true});
+  pg.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>50){dx<0?calNext():calPrev();}},{passive:true});
+}
+
+function renderCal(){
+  const t=new Date(),fd=new Date(calY,calM,1),dim=new Date(calY,calM+1,0).getDate();
+  const sdow=fd.getDay(),prevDim=new Date(calY,calM,0).getDate();
+
+  if(calMode==='greg'){
+    document.getElementById('cal-main').textContent=(calM+1)+'/'+calY;
+    const hs=toHijri(new Date(calY,calM,15));
+    document.getElementById('cal-sub').textContent=hs.m+'/'+hs.y+'هـ';
+  } else {
+    const hs=toHijri(new Date(calY,calM,15));
+    document.getElementById('cal-main').textContent=hs.m+'/'+hs.y+'هـ';
+    document.getElementById('cal-sub').textContent=(calM+1)+'/'+calY;
+  }
+
+  let html='';
+
+  // prev month fill
+  for(let i=0;i<sdow;i++){
+    const pd=prevDim-sdow+i+1;
+    const dt=new Date(calY,calM-1,pd);
+    const main=calMode==='greg'?gregDayNum(dt):hijriDayNum(dt);
+    const sub=calMode==='greg'?hijriDayNum(dt):gregDayNum(dt);
+    html+=`<div class="cday om"><div class="cdm">${main}</div><div class="cds">${sub}</div></div>`;
+  }
+
+  for(let d=1;d<=dim;d++){
+    const dt=new Date(calY,calM,d);
+    const isT=dt.toDateString()===t.toDateString();
+    const isFri=dt.getDay()===5;
+    const main=calMode==='greg'?gregDayNum(dt):hijriDayNum(dt);
+    const sub=calMode==='greg'?hijriDayNum(dt):gregDayNum(dt);
+    const hv=toHijri(dt);
+    const isEv=[1,15].includes(hv.d)&&[9,10,12].includes(hv.m);
+    html+=`<div class="cday${isT?' today':''}${isFri&&!isT?' fri':''}" onclick="selDay(${calY},${calM},${d})"><div class="cdm">${main}</div><div class="cds">${sub}</div>${isEv?'<div class="edot"></div>':''}</div>`;
+  }
+
+  // trailing
+  const trail=42-sdow-dim;
+  for(let d=1;d<=trail;d++){
+    const dt=new Date(calY,calM+1,d);
+    const main=calMode==='greg'?gregDayNum(dt):hijriDayNum(dt);
+    const sub=calMode==='greg'?hijriDayNum(dt):gregDayNum(dt);
+    html+=`<div class="cday om"><div class="cdm">${main}</div><div class="cds">${sub}</div></div>`;
+  }
+
+  document.getElementById('cgrid').innerHTML=html;
+}
+
+function selDay(y,m,d){
+  const dt=new Date(y,m,d);
+  const DN=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  document.getElementById('sel-info').textContent=DN[dt.getDay()]+' '+d+'/'+(m+1)+'/'+y+'\n'+hijriStr(dt);
+}
+function calPrev(){calM--;if(calM<0){calM=11;calY--;}renderCal();}
+function calNext(){calM++;if(calM>11){calM=0;calY++;}renderCal();}
+function calToday(){const t=new Date();calY=t.getFullYear();calM=t.getMonth();document.getElementById('sel-info').textContent='';renderCal();}
+
+// ── QIBLA ─────────────────────────────────────────────
+const MECCA={lat:21.4225,lng:39.8262};
+let qAngle=0;
+function qAngleFn(lat,lng){
+  const f1=lat*Math.PI/180,f2=MECCA.lat*Math.PI/180,dl=(MECCA.lng-lng)*Math.PI/180;
+  return(Math.atan2(Math.sin(dl)*Math.cos(f2),Math.cos(f1)*Math.sin(f2)-Math.sin(f1)*Math.cos(f2)*Math.cos(dl))*180/Math.PI+360)%360;
+}
+function qDist(lat,lng){
+  const R=6371,f1=lat*Math.PI/180,f2=MECCA.lat*Math.PI/180,df=(MECCA.lat-lat)*Math.PI/180,dl=(MECCA.lng-lng)*Math.PI/180;
+  const a=Math.sin(df/2)**2+Math.cos(f1)*Math.cos(f2)*Math.sin(dl/2)**2;
+  return Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
+}
+function startQibla(){
+  const btn=document.getElementById('qbtn');
+  document.getElementById('qerr').textContent='';
+  btn.textContent='⏳ جاري...';btn.disabled=true;
+  if(!navigator.geolocation){applyFb();return;}
+  navigator.geolocation.getCurrentPosition(
+    p=>{applyQ(p.coords.latitude,p.coords.longitude,false);btn.textContent='🔄 تحديث';btn.disabled=false;tryCompass();},
+    ()=>{applyFb();btn.textContent='🔄 إعادة';btn.disabled=false;},
+    {enableHighAccuracy:true,timeout:10000,maximumAge:60000}
+  );
+}
+function applyQ(lat,lng,fb){
+  qAngle=qAngleFn(lat,lng);
+  const dist=qDist(lat,lng);
+  const dirs=['شمال','شمال شرق','شرق','جنوب شرق','جنوب','جنوب غرب','غرب','شمال غرب'];
+  const dir=dirs[Math.round(qAngle/45)%8];
+  document.getElementById('qdeg').textContent=Math.round(qAngle)+'°';
+  document.getElementById('qdir').textContent='الاتجاه: '+dir+' من موقعك';
+  document.getElementById('qinfo').innerHTML=`<span class="big">🕋 ${Math.round(qAngle)}° ${dir}</span>المسافة إلى مكة: <strong style="color:var(--gold2)">${dist.toLocaleString('ar')} كم</strong>${fb?'<div style="font-size:12px;color:var(--red);margin-top:4px">قيمة تقريبية لسبت العلايه</div>':'<div style="font-size:12px;color:var(--dk-text3);margin-top:4px">'+lat.toFixed(4)+'°N '+lng.toFixed(4)+'°E</div>'}`;
+  document.getElementById('qneedle').style.transform=`translate(-50%,-100%) rotate(${qAngle}deg)`;
+}
+function applyFb(){document.getElementById('qerr').textContent='⚠️ تعذر الوصول للموقع — قيمة تقريبية';applyQ(18.5,42.2,true);}
+function tryCompass(){
+  if(!window.DeviceOrientationEvent)return;
+  typeof DeviceOrientationEvent.requestPermission==='function'
+    ?DeviceOrientationEvent.requestPermission().then(p=>{if(p==='granted')listenC();})
+    :listenC();
+}
+function listenC(){
+  window.addEventListener('deviceorientation',e=>{
+    const h=e.webkitCompassHeading||(e.alpha?(360-e.alpha):null);
+    if(h===null)return;
+    document.getElementById('qring').style.transform=`rotate(${-h}deg)`;
+    document.getElementById('qneedle').style.transform=`translate(-50%,-100%) rotate(${qAngle}deg)`;
+  },{passive:true});
+}
+
+// ── CALC ──────────────────────────────────────────────
+function ar(n){return Math.abs(n).toLocaleString('ar-SA');}
+
+function calcAge(){
+  const dob=document.getElementById('age-dob').value;
+  if(!dob){alert('أدخل تاريخ الميلاد');return;}
+  const birth=new Date(dob),now=new Date();
+  let y=now.getFullYear()-birth.getFullYear(),mo=now.getMonth()-birth.getMonth(),d=now.getDate()-birth.getDate();
+  if(d<0){mo--;d+=new Date(now.getFullYear(),now.getMonth(),0).getDate();}
+  if(mo<0){y--;mo+=12;}
+  const total=Math.round((now-birth)/86400000);
+  const hb=toHijri(birth);
+  document.getElementById('age-main').textContent=ar(y)+' سنة';
+  document.getElementById('age-sub').innerHTML=ar(y)+' سنة، '+ar(mo)+' شهر، '+ar(d)+' يوم<br>'+ar(total)+' يوم إجمالاً<br>ميلادك هجري: '+hb.d+' '+HM[hb.m-1]+' '+hb.y+'هـ';
+  document.getElementById('abox').classList.add('show');
+}
+
+function calcDiff(){
+  const a=document.getElementById('diff-a').value,b=document.getElementById('diff-b').value;
+  if(!a||!b){alert('اختر التاريخين');return;}
+  const diff=Math.round((new Date(b)-new Date(a))/86400000),abs=Math.abs(diff);
+  const y=Math.floor(abs/365),mo=Math.floor((abs%365)/30),d=(abs%365)%30;
+  const el=document.getElementById('r-days');
+  el.textContent=(diff<0?'−':'')+ar(abs)+' يوم';
+  el.style.color=diff<0?'#f87171':'var(--gold2)';
+  document.getElementById('r-text').textContent=ar(y)+' سنة، '+ar(mo)+' شهر، '+ar(d)+' يوم'+(diff<0?'\n(التاريخ الثاني أسبق)':'');
+  document.getElementById('r-det').innerHTML=`<div class="rd"><div class="rdv">${ar(abs)}</div><div class="rdl">يوم</div></div><div class="rd"><div class="rdv">${ar(Math.round(abs/7))}</div><div class="rdl">أسبوع</div></div><div class="rd"><div class="rdv">${ar(Math.round(abs/30))}</div><div class="rdl">شهر</div></div>`;
+  document.getElementById('rbox').classList.add('show');
+}
+
+function calcCd(){
+  const ds=document.getElementById('cd-date').value,lbl=document.getElementById('cd-lbl').value||'الموعد';
+  if(!ds){alert('اختر التاريخ');return;}
+  const tg=new Date(ds),now=new Date();now.setHours(0,0,0,0);tg.setHours(0,0,0,0);
+  const diff=Math.round((tg-now)/86400000);
+  const el=document.getElementById('cd-main');
+  if(diff>0){el.textContent=ar(diff)+' يوم';el.className='cdmain';document.getElementById('cd-sub').textContent='باقي على '+lbl;}
+  else if(diff===0){el.textContent='اليوم!';el.className='cdmain';document.getElementById('cd-sub').textContent=lbl+' هو اليوم';}
+  else{el.textContent=ar(Math.abs(diff))+' يوم';el.className='cdmain neg';document.getElementById('cd-sub').textContent=lbl+' مضى منذ '+ar(Math.abs(diff))+' يوم';}
+  document.getElementById('cdbox').classList.add('show');
+}
+
+// ── TABS ──────────────────────────────────────────────
+function showTab(n){
+  ['weather','cal','qibla','calc'].forEach(t=>{
+    document.getElementById('p-'+t).classList.toggle('on',t===n);
+    document.getElementById('tb-'+t).classList.toggle('on',t===n);
+  });
+}
+
+// ── BOOT ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  initWeather();
+  initCal();
+  const td=new Date().toISOString().split('T')[0];
+  document.getElementById('diff-a').value=td;
+  document.getElementById('diff-b').value=td;
+  document.getElementById('cd-date').value=td;
+});
+</script>
+</body>
+</html>
